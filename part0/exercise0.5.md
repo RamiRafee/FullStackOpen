@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant browser
+    participant server
+
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/spa
+    activate server
+    server-->>browser: HTML document
+    deactivate server
+
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/main.css
+    activate server
+    server-->>browser: the css file
+    deactivate server
+
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/spa.js
+    activate server
+    server-->>browser: the JavaScript file
+    deactivate server
+
+    Note right of browser: The browser starts executing spa.js which fetches the notes data
+
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/data.json
+    activate server
+    server-->>browser: [
+        {
+        "content": "marhaba",
+        "date": "2026-03-09T13:07:19.943Z"
+        },... ]
+    deactivate server
+
+    Note right of browser: The browser renders the notes list dynamically without reloading the page
