@@ -5,7 +5,7 @@ import Filter from './Filter'
 import PersonForm from './PersonForm'
 import Persons from './Persons'
 import axios from 'axios'
-
+import personsService from './services/persons'
 const baseUrl = 'http://localhost:3001/persons'
 
 const App = () => {
@@ -15,24 +15,47 @@ const App = () => {
   const [filter, setFilter] = useState('')
 
   useEffect(() => {
-    axios.get(baseUrl)
-    .then(res =>res.data)
-    .then(data => setPersons(data))
+    personsService.getAll().then(data => setPersons(data))
   }, [])
+  
   const handleSubmit = (event) => {
     event.preventDefault()
-    if (persons.some(p => p.name.toLowerCase() === newName.toLowerCase())) {
-      alert(`${newName} is already added to phonebook`)
+
+    const existingPerson = persons.find(
+      p => p.name.toLowerCase() === newName.toLowerCase()
+    )
+
+    if (existingPerson) {
+      const confirmed = window.confirm(
+        `${existingPerson.name} is already added to phonebook, replace the old number with a new one?`
+      )
+      if (!confirmed) return
+
+      personsService
+        .update(existingPerson.id, { ...existingPerson, number: newNumber })
+        .then(updatedPerson => {
+          setPersons(persons.map(p => p.id === existingPerson.id ? updatedPerson : p))
+          setNewName('')
+          setNewNumber('')
+        })
       return
     }
-    const newPerson = {
-      name: newName,
-      number: newNumber,
-      id: persons.length + 1
-    }
-    setPersons(persons.concat(newPerson))
-    setNewName('')
-    setNewNumber('')
+
+    personsService
+      .create({ name: newName, number: newNumber })
+      .then(createdPerson => {
+        setPersons(persons.concat(createdPerson))
+        setNewName('')
+        setNewNumber('')
+      })
+  }
+
+  const handleDelete = (id, name) => {
+    if (!window.confirm(`Delete ${name}?`)) return
+
+    personsService
+      .remove(id)
+      .then(() => setPersons(persons.filter(p => p.id !== id)))
   }
 
   const filteredPersons = persons.filter(p =>
@@ -54,7 +77,7 @@ const App = () => {
       />
 
       <h3>Numbers</h3>
-      <Persons persons={filteredPersons} />
+      <Persons persons={filteredPersons} handleDelete={handleDelete} />
     </div>
   )
 }
